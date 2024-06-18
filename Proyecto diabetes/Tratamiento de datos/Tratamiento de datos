@@ -1,1 +1,72 @@
+title: "Proyecto diabetes"
+author: "Antonio Blasco Cuadrado"
+date: "2024-06-09"
+output: html_document
+---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, echo = TRUE}
+library(dplyr)
+library(ggplot2)
+library(plotly)
+library(stats)
+library(tidyverse)
+library(plotly)
+library(reshape2)
+```
+```{r, echo = TRUE}
+
+#Tratamiento de datos
+Data <- read.csv("data3.csv")
+print(paste("El conjunto de datos tiene", nrow(Data), "filas y", ncol(Data), "columnas"))
+#Identificar valores no numéricos
+Columnas_no_numericas <- sapply(Data, function(x) !is.numeric(x))
+nombres_no_numericas <- names(Data)[Columnas_no_numericas]
+print(nombres_no_numericas)
+
+ #Normalidad datos.
+resultados_ad <- data.frame(Variable = character(), AD_Statistic = numeric(), P_Value = numeric(), stringsAsFactors = FALSE)
+columnas_interes <- grep("^alimento|^nutriente", names(Data), value = TRUE)
+for (col in columnas_interes) {
+  ad_test <- ad.test(Data[[col]])
+  resultados_ad <- rbind(resultados_ad, data.frame(Variable = col, AD_Statistic = ad_test$statistic, P_Value = ad_test$p.value))
+}
+print(resultados_ad)
+
+#Identificación de valores nulos
+no_numericos_por_columna <- sapply(Data, function(x) sum(is.na(x)))
+total_nas <- sum(no_numericos_por_columna)
+print(paste("Total de valores NA en el conjunto:", total_nas))
+filas_nulas <- which(rowSums(is.na(Data)) > 0)
+print(paste("Hay", length(filas_nulas), "filas con un valor nulo"))
+
+#Identificación de valores infinitos
+infinitos_por_columna <- sapply(Data, function(x) sum(is.infinite(x)))
+total_inf <- sum(infinitos_por_columna)
+print(paste("total de valores infinitos en el conjunto de datos", total_inf))
+data_clean <- na.omit(Data)
+no_numericos_por_columna <- sapply(data_clean, function(x) sum(is.na(x)))
+total_nas <- sum(no_numericos_por_columna)
+print(paste("Total de valores NA en el conjunto:", total_nas))
+
+#Normalización
+id <- data_clean$id
+estado_civil <- data_clean$estado_civil
+sexo <- data_clean$sexo
+edad <- data_clean$edad
+ECV_prev <- data_clean$ECV_prev
+diab_prev <- data_clean$diab_prev
+hta_prev <- data_clean$diab_prev
+cancer_prev <- data_clean$cancer_prev
+FA_prev <- data_clean$FA_prev
+depres_prev <- data_clean$depres_prev
+data_clean1 <- select(data_clean, -id, -estado_civil, -sexo, -edad, -ECV_prev, -diab_prev, -hta_prev, -cancer_prev, -FA_prev, -depres_prev)
+Data_normal <- as.data.frame(lapply(data_clean1, scale))
+Data_final <- cbind(id, estado_civil, sexo, edad, ECV_prev, diab_prev, hta_prev, cancer_prev, FA_prev, depres_prev, Data_normal)
+write.csv(Data_final, "Datos_PCA.csv", row.names = FALSE)
+
+
+```
