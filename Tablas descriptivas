@@ -1,0 +1,174 @@
+---
+title: "Tablas descriptivas"
+author: "Núria Peñuelas Peñarroya"
+date: "2024-06-17"
+output: html_document
+---
+
+#Calculamos los terciles de los componentes principales calculados durante el analisis de PCA previo, y hacemos las tablas descriptivas
+
+## Imprimimos los scores del PCA
+scores <- pca_result$x
+head(scores)
+
+## Extraemos los scores de los componentes y lo convertimos a dataframe:
+pca_scores_df <- as.data.frame(pca_result$x)
+
+## Añadimos nombres a las columnas de los componentes principales:
+colnames(pca_scores_df) <- paste0("PC", 1:ncol(pca_scores_df))
+
+## Calculamos los terciles para cada uno de los 3 componentes:
+pca_scores_df <- pca_scores_df %>%
+  mutate(
+    PC1_tercile = ntile(PC1, 3),
+    PC2_tercile = ntile(PC2, 3),
+    PC3_tercile = ntile(PC3, 3)
+)
+
+
+## Juntamos los scores y los terciles con los datos del dataset original, para obtener otra vez las variables sociodemograficas:
+selected_cols <- pca_scores_df[c("PC1_tercile", "PC2_tercile", "PC3_tercile")]
+result_df <- cbind(data_clean, selected_cols)
+
+
+## Convertimos las variables categóricas a factores si no lo están:
+result_df$sexo <- factor(result_df$sexo)
+result_df$estado_civil <- factor(result_df$estado_civil)
+result_df$tabaco <- factor(result_df$tabaco)
+result_df$HTA <- factor(result_df$HTA)
+result_df$hipercolesterolemia <- factor(result_df$hipercolesterolemia)
+result_df$hipertrigliceridemia <- factor(result_df$hipertrigliceridemia)
+result_df$PC1_tercile <- factor(result_df$PC1_tercile)
+result_df$PC2_tercile<- factor(result_df$PC2_tercile)
+result_df$PC3_tercile <- factor(result_df$PC3_tercile)
+
+
+## Creamos la tabla descriptiva con gtsummary para el componente 1:
+library(gtsummary)
+table_desc_PC1 <- result_df  %>%
+select(altura, peso, IMC, sexo, edad, estado_civil, tabaco, colesterol, hdl, HTA, hipercolesterolemia, hipertrigliceridemia, PC1_tercile) %>%
+  tbl_summary(
+    by = PC1_tercile,
+    statistic = list(
+      all_categorical() ~ "{n} / {N} ({p}%)",
+      all_continuous() ~ "{median} ({p25}, {p75})"
+    )
+  )
+table_desc_PC1
+
+
+## Creamos la tabla descriptiva con gtsummary para el componente 2:
+table_desc_PC2 <- result_df %>%
+  select(altura, peso, IMC, sexo, edad, estado_civil, tabaco, colesterol, hdl, HTA, hipercolesterolemia, hipertrigliceridemia, PC2_tercile) %>%
+  tbl_summary(
+    by = PC2_tercile,
+    statistic = list(
+      all_categorical() ~ "{n} / {N} ({p}%)",
+      all_continuous() ~ "{median} ({p25}, {p75})"
+))
+table_desc_PC2
+
+## Creamos la tabla descriptiva con gtsummary para el componente 3:
+table_desc_PC3 <- result_df %>%
+  select(altura, peso, IMC, sexo, edad, estado_civil, tabaco, colesterol, hdl, HTA, hipercolesterolemia, hipertrigliceridemia, PC3_tercile) %>%
+  tbl_summary(
+    by = PC3_tercile,
+    statistic = list(
+      all_categorical() ~ "{n} / {N} ({p}%)",
+      all_continuous() ~ "{median} ({p25}, {p75})"
+    )
+  )
+table_desc_PC3
+
+
+
+#Calculamos la estadística entre los terciles en las variables sociodemogràficas para la tabla
+
+## Shapiro-Wilk test para normalidad:
+shapiro_result_altura <- shapiro.test(result_df$altura)
+shapiro_result_peso <- shapiro.test(result_df$peso)
+shapiro_result_IMC <- shapiro.test(result_df$IMC)
+shapiro_result_edad <- shapiro.test(result_df$edad)
+
+print(shapiro_result_altura)
+print(shapiro_result_peso)
+print(shapiro_result_IMC)
+print(shapiro_result_edad)
+
+##Como vemos que las variables no son normales, hacemos kruskal.wallis
+
+##Kruskal Wallis para las variables numéricas:
+
+## Kruskal-Wallis para el primer componente:
+kruskal_result_altura <- kruskal.test(altura ~ PC1_tercile, data = result_df)
+kruskal_result_peso <- kruskal.test(peso ~ PC1_tercile, data = result_df)
+kruskal_result_IMC <- kruskal.test(IMC ~ PC1_tercile, data = result_df)
+kruskal_result_edad <- kruskal.test(edad ~ PC1_tercile, data = result_df)
+
+print("Kruskal-Wallis Test Results for Continuous Variables:")
+print(paste("Altura:", kruskal_result_altura$p.value))
+print(paste("Peso:", kruskal_result_peso$p.value))
+print(paste("IMC:", kruskal_result_IMC$p.value))
+print(paste("Edad:", kruskal_result_edad$p.value))
+
+
+## Kruskal-Wallis para el segundo componente:
+kruskal_result_altura <- kruskal.test(altura ~ PC2_tercile, data = result_df)
+kruskal_result_peso <- kruskal.test(peso ~ PC2_tercile, data = result_df)
+kruskal_result_IMC <- kruskal.test(IMC ~ PC2_tercile, data = result_df)
+kruskal_result_edad <- kruskal.test(edad ~ PC2_tercile, data = result_df)
+
+print("Kruskal-Wallis Test Results for Continuous Variables:")
+print(paste("Altura:", kruskal_result_altura$p.value))
+print(paste("Peso:", kruskal_result_peso$p.value))
+print(paste("IMC:", kruskal_result_IMC$p.value))
+print(paste("Edad:", kruskal_result_edad$p.value))
+
+
+##Kruskal-Wallis para el tercer componente:
+kruskal_result_altura <- kruskal.test(altura ~ PC3_tercile, data = result_df)
+kruskal_result_peso <- kruskal.test(peso ~ PC3_tercile, data = result_df)
+kruskal_result_IMC <- kruskal.test(IMC ~ PC3_tercile, data = result_df)
+kruskal_result_edad <- kruskal.test(edad ~ PC3_tercile, data = result_df)
+
+print("Kruskal-Wallis Test Results for Continuous Variables:")
+print(paste("Altura:", kruskal_result_altura$p.value))
+print(paste("Peso:", kruskal_result_peso$p.value))
+print(paste("IMC:", kruskal_result_IMC$p.value))
+print(paste("Edad:", kruskal_result_edad$p.value))
+
+
+
+##Fisher's exact test para variables categoricas:
+categorical_vars <- c("sexo", "estado_civil", "tabaco", "colesterol", "hdl", "HTA", "hipercolesterolemia", "hipertrigliceridemia")
+
+##Fisher's exact para el primer componente:
+fisher_p_values_PC1 <- lapply(categorical_vars, function(var) {
+  contingency_table <- table(result_df[[var]], result_df$PC1_tercile)
+  fisher.test(contingency_table, simulate.p.value = TRUE)$p.value
+})
+
+fisher_results_PC1 <- data.frame(variable = categorical_vars, p_value = unlist(fisher_p_values_PC1))
+print("Fisher's Exact Test Results for Categorical Variables:")
+print(fisher_results_PC1)
+
+
+##Fisher's exact para el segundo componente:
+fisher_p_values_PC2 <- lapply(categorical_vars, function(var) {
+  contingency_table <- table(result_df[[var]], result_df$PC2_tercile)
+  fisher.test(contingency_table, simulate.p.value = TRUE)$p.value
+})
+
+fisher_results_PC2 <- data.frame(variable = categorical_vars, p_value = unlist(fisher_p_values_PC2))
+print("Fisher's Exact Test Results for Categorical Variables:")
+print(fisher_results_PC2)
+
+##Fisher's exact para el tercer componente:
+fisher_p_values_PC3 <- lapply(categorical_vars, function(var) {
+  contingency_table <- table(result_df[[var]], result_df$PC3_tercile)
+  fisher.test(contingency_table, simulate.p.value = TRUE)$p.value
+})
+
+fisher_results_PC3 <- data.frame(variable = categorical_vars, p_value = unlist(fisher_p_values_PC3))
+print("Fisher's Exact Test Results for Categorical Variables:")
+print(fisher_results_PC3)
