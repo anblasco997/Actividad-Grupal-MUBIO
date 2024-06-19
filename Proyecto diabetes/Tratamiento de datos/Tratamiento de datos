@@ -68,5 +68,9 @@ Data_normal <- as.data.frame(lapply(data_clean1, scale))
 Data_final <- cbind(id, estado_civil, sexo, edad, ECV_prev, diab_prev, hta_prev, cancer_prev, FA_prev, depres_prev, Data_normal)
 write.csv(Data_final, "Datos_PCA.csv", row.names = FALSE)
 
-
+#PCA
+Datos_PCA <- read.csv("Datos_PCA.csv")
+datos_alimentos_nutrientes <- Datos_PCA %>% select(28:ncol(Datos_PCA))
+pca_result <- prcomp(datos_alimentos_nutrientes, center = TRUE, scale. = TRUE)
+summary(pca_result)
 ```
